@@ -1,9 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.util.Random;
 
 public class GamePanel extends JPanel implements ActionListener {
@@ -45,17 +42,25 @@ public class GamePanel extends JPanel implements ActionListener {
         startGame();
 
     }
+    
+   //-----------------------------------------------
 
     public void startGame() {
         newApple() ;
         running = true;
         timer = new Timer(DELAY , this);
+        timer.start();
     }
+    
+    //-----------------------------------------------
+
 
     public void paintComponent(Graphics Field){
         super.paintComponent(Field);
         drawField(Field);
     }
+    
+    //-----------------------------------------------
 
     public void drawField(Graphics Field) {
 
@@ -65,27 +70,36 @@ public class GamePanel extends JPanel implements ActionListener {
             Field.drawLine ( 0 , i* UNIT_SIZE , SCREEN_WIDTH , i* UNIT_SIZE) ;
         }
 
-        // draw apple on the field
+        // apple on the field
         Field.setColor(Color.RED);
         Field.fillOval(appleX , appleY, UNIT_SIZE, UNIT_SIZE);
 
-        // draw snake on the field
-        for (int i = 0; i < bodyParts; i++) {
+        // snake on the field
+        if(running) {
+            for (int i = 0; i < bodyParts; i++) {
 
-            // set snake's head color
-            if(i == 0) {
-                Field.setColor(Color.GREEN);
-                Field.fillRect(x[i] , y[i] , UNIT_SIZE,UNIT_SIZE);
-            }
-            // set snake's body color
-            else{
-                Field.setColor(new Color(177, 234, 130));
-            }
+                // snake's head color
+                if (i == 0) {
+                    Field.setColor(Color.GREEN);
+                    Field.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+                }
+                // snake's body color
+                else {
+                    Field.setColor(new Color(177, 234, 130));
+                    Field.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+                }
 
+            }
+            showScore(Field);
+        }
+        else{
+            gameOver(Field);
         }
 
     }
+    
 
+     //-----------------------------------------------
     // Generate the coordinates of a new apple
     public void newApple () {
         appleX = random.nextInt((int)(SCREEN_WIDTH / UNIT_SIZE)) * UNIT_SIZE;
@@ -96,7 +110,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
     public void move() {
         // shifting the body parts of the snake
-        for (int i = bodyParts; i > 0  ; i -- ) {
+        for (int i = bodyParts; i > 0  ; i-- ) {
 
             x[i] = x [i-1] ;
             y[i] = y [i-1] ;
@@ -115,18 +129,91 @@ public class GamePanel extends JPanel implements ActionListener {
 
     }
 
+    
+    //-----------------------------------------------
+
     public void checkApple() {
+        if ((x[0] == appleX) && (y[0] == appleY)) {
+            bodyParts++;
+            applesEaten ++;
+            newApple();
+        }
 
     }
+
+    
+    //-----------------------------------------------
 
     public void checkCollision() {
 
+        // check if head COLLIDES with the body
+        for (int i = bodyParts; i > 0 ; i--) {
+            if ((x[0] == x[i]) && (y[0] == y[i])) {
+                running = false;
+                break;
+            }
+        }
+
+        // check if head touches LEFT border
+        if ( x[0] < 0) {
+            running = false ;
+        }
+
+        // check if head touches RIGHT border
+        if ( x[0] > SCREEN_WIDTH) {
+            running = false ;
+        }
+
+        // check if head touches TOP border
+        if ( y[0] < 0) {
+            running = false ;
+        }
+
+        // check if head touches BOTTOM border
+        if ( y[0] > SCREEN_HEIGHT) {
+            running = false ;
+        }
+        if(!running) {
+            timer.stop();
+        }
     }
 
-    public void gameOver () {
+    
+    
+    //-----------------------------------------------
+    public void showScore (Graphics Score_Text) {
+        // text
+        Score_Text.setColor(Color.cyan);
+        Score_Text.setFont(new Font("new" , Font.PLAIN,35));
+        FontMetrics metrics = getFontMetrics(Score_Text.getFont());
+
+        Score_Text.drawString("score : " +applesEaten,
+                (SCREEN_WIDTH - metrics.stringWidth("score : " +applesEaten)) / 2 ,
+                Score_Text.getFont().getSize() );
+
 
     }
+    
+    
+    //-----------------------------------------------
+    public void gameOver (Graphics GO_Text) {
+        // text
+        GO_Text.setColor(Color.orange);
+        GO_Text.setFont(new Font("new" , Font.PLAIN,75));
+        FontMetrics metrics = getFontMetrics(GO_Text.getFont());
 
+        GO_Text.drawString("Game Over",
+                            (SCREEN_WIDTH - metrics.stringWidth("Game Over")) / 2 ,
+                            SCREEN_HEIGHT/2 );
+
+        showScore(GO_Text);
+
+
+    }
+    
+    
+    
+    //-----------------------------------------------
     @Override
     public void actionPerformed(ActionEvent e) {
 
@@ -138,11 +225,37 @@ public class GamePanel extends JPanel implements ActionListener {
         repaint();
 
     }
-
-
+    
+    
+    
+    //-----------------------------------------------
+    // key adapter transforms directional arrow inputs into direction inputs
     public class MyKeyAdapter extends KeyAdapter {
+        @Override
+        public void keyPressed (KeyEvent e) {
 
-        public void KeyPressed(KeyEvent e) {
+            switch(e.getKeyCode()) {
+                case KeyEvent.VK_LEFT:
+                    if(direction != 'R') {
+                        direction = 'L';
+                    }
+                    break;
+                case KeyEvent.VK_RIGHT:
+                    if(direction != 'L') {
+                        direction = 'R';
+                    }
+                    break;
+                case KeyEvent.VK_UP:
+                    if(direction != 'D') {
+                        direction = 'U';
+                    }
+                    break;
+                case KeyEvent.VK_DOWN:
+                    if(direction != 'U') {
+                        direction = 'D';
+                    }
+                    break;
+            }
 
         }
     }
